@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use iced::Element;
+use iced::{Element};
 use oxiced::{theme::theme::OXITHEME, widgets::oxi_button::{self, ButtonVariant}};
 
 use crate::{Message, SVG_PATH};
@@ -59,16 +59,16 @@ pub fn mk_content_button(
     current_index: usize,
     content: Element<Message>,
 ) -> iced::widget::Button<'_, Message> {
-    oxi_button::button(content, ButtonVariant::RowEntry)
+    oxi_button::button(content, ButtonVariant::Neutral)
         .on_press(Message::Copy(current_index as i32))
         .style(move |theme, status| {
             let is_focused = current_index == focused_index;
             let palette = OXITHEME;
-            let default_style = oxi_button::row_entry(theme, status);
+            let default_style = oxi_button::neutral_button(theme, status);
             let background = if is_focused {
-                default_style.background
+                Some(iced::Background::Color(palette.primary_bg_hover))
             } else {
-                Some(iced::Background::Color(palette.secondary_bg))
+                default_style.background
             };
             iced::widget::button::Style {
                 background,

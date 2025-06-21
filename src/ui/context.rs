@@ -78,7 +78,7 @@ impl ImageContext {
                                 SvgStyleVariant::Primary,
                                 mk_svg("threedot.svg"),
                             ),
-                            ButtonVariant::RowEntry,
+                            ButtonVariant::Neutral,
                         )
                         .on_press(Message::SubMessageContext(key, ContextMenuMessage::Expand))
                         .height(45)
@@ -140,7 +140,7 @@ impl TextContext {
             Some(
                 button(
                     oxi_svg::svg_from_path(SvgStyleVariant::Primary, mk_svg("threedot.svg")),
-                    ButtonVariant::RowEntry,
+                    ButtonVariant::Neutral,
                 )
                 .on_press(Message::SubMessageContext(key, ContextMenuMessage::Expand))
                 .height(45)

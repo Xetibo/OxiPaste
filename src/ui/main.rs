@@ -8,13 +8,13 @@ use context::{
 };
 use iced::keyboard::Modifiers;
 use iced::keyboard::key::Named;
-use iced::widget::container::Style;
-use iced::widget::{Column, Row, column, container, row, scrollable};
-use iced::{Alignment, Color, Element, Length, Renderer, Task, Theme, event, futures};
+use iced::widget::{Column, Row, column, row, scrollable};
+use iced::{Alignment, Color, Element, Length, Task, Theme, event, futures};
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use oxiced::theme::theme::get_derived_iced_theme;
 use oxiced::widgets::oxi_button::{ButtonVariant, button};
+use oxiced::widgets::oxi_layer::{layer_theme, rounded_layer};
 use oxiced::widgets::oxi_picklist::pick_list;
 use oxiced::widgets::oxi_svg::{self, SvgStyleVariant};
 use oxiced::widgets::oxi_text_input::text_input;
@@ -32,6 +32,24 @@ mod custom_rich;
 mod utils;
 
 const SVG_PATH: Lazy<PathBuf> = Lazy::new(|| svg_path());
+const WINDOW_SIZE: (u32, u32) = (600, 800);
+const WINDOW_MARGIN: (i32, i32, i32, i32) = (100, 100, 100, 100);
+
+pub fn main() -> Result<(), iced_layershell::Error> {
+    let settings = Settings {
+        layer_settings: LayerShellSettings {
+            size: Some(WINDOW_SIZE),
+            exclusive_zone: 0,
+            anchor: Anchor::Left | Anchor::Right | Anchor::Top | Anchor::Bottom,
+            layer: Layer::Overlay,
+            margin: WINDOW_MARGIN,
+            keyboard_interactivity: KeyboardInteractivity::Exclusive,
+            ..Default::default()
+        },
+        ..Default::default()
+    };
+    OxiPaste::run(settings)
+}
 
 #[derive(Debug, Clone)]
 pub struct OxiPasteError {
@@ -73,22 +91,6 @@ pub fn into_general_error(
     Some(OxiPasteError {
         message: error.to_string(),
     })
-}
-
-pub fn main() -> Result<(), iced_layershell::Error> {
-    let settings = Settings {
-        layer_settings: LayerShellSettings {
-            size: Some((600, 800)),
-            exclusive_zone: 0,
-            anchor: Anchor::Left | Anchor::Right | Anchor::Top | Anchor::Bottom,
-            layer: Layer::Overlay,
-            margin: (100, 100, 100, 100),
-            keyboard_interactivity: KeyboardInteractivity::Exclusive,
-            ..Default::default()
-        },
-        ..Default::default()
-    };
-    OxiPaste::run(settings)
 }
 
 struct OxiPaste {
@@ -165,28 +167,6 @@ impl TryInto<LayershellCustomActions> for Message {
     fn try_into(self) -> Result<LayershellCustomActions, Self::Error> {
         Err(self)
     }
-}
-
-fn box_style(theme: &Theme) -> Style {
-    let palette = theme.extended_palette();
-    Style {
-        background: Some(iced::Background::Color(
-            palette.background.base.color,
-        )),
-        border: iced::border::color(palette.primary.strong.color).width(5).rounded(10),
-        ..container::rounded_box(theme)
-    }
-}
-
-fn wrap_in_rounded_box<'a>(
-    content: impl Into<Element<'a, Message, Theme, Renderer>>,
-) -> Element<'a, Message> {
-    container(content)
-        .style(box_style)
-        .align_x(Alignment::Center)
-        .padding(50)
-        .max_width(600)
-        .into()
 }
 
 impl OxiPaste {
@@ -350,7 +330,7 @@ impl Application for OxiPaste {
     }
 
     fn view(&self) -> Element<Message> {
-        wrap_in_rounded_box(window(self))
+        rounded_layer(window(self), WINDOW_SIZE)
     }
 
     fn theme(&self) -> Theme {
@@ -358,12 +338,8 @@ impl Application for OxiPaste {
     }
 
     // remove the annoying background color
-    fn style(&self, theme: &Self::Theme) -> iced_layershell::Appearance {
-        let palette = theme.extended_palette();
-        iced_layershell::Appearance {
-            background_color: iced::Color::TRANSPARENT,
-            text_color: palette.background.base.text,
-        }
+    fn style(&self, _: &Self::Theme) -> iced_layershell::Appearance {
+        layer_theme()
     }
 
     fn scale_factor(&self) -> f64 {
@@ -400,7 +376,7 @@ fn clipboard_element<'a>(
                     let mut label = command.label.clone();
                     label.truncate(5);
 
-                    button(iced::widget::text(label), ButtonVariant::RowEntry)
+                    button(iced::widget::text(label), ButtonVariant::Neutral)
                         .on_press(Message::RunContextCommand(command, copy, key))
                         .into()
                 }
@@ -409,7 +385,7 @@ fn clipboard_element<'a>(
             .width(iced::Length::Fill),
             button(
                 oxi_svg::svg_from_path(SvgStyleVariant::Primary, mk_svg("delete.svg")),
-                ButtonVariant::RowEntry
+                ButtonVariant::Neutral
             )
             .on_press(Message::Remove(key))
             .width(45)
@@ -426,7 +402,7 @@ fn clipboard_element<'a>(
                 .on_press(Message::Copy(key)),
             button(
                 oxi_svg::svg_from_path(SvgStyleVariant::Primary, mk_svg("delete.svg")),
-                ButtonVariant::RowEntry
+                ButtonVariant::Neutral
             )
             .on_press(Message::Remove(key))
             .width(45)
@@ -472,7 +448,7 @@ fn window(state: &OxiPaste) -> Column<Message> {
                         Message::SetContentTypeFilter
                     )
                     .width(Length::Fill),
-                    button("Clear all", ButtonVariant::RowEntry).on_press(Message::ClearClipboard)
+                    button("Clear all", ButtonVariant::Neutral).on_press(Message::ClearClipboard)
                 ]
                 .spacing(10),
                 text_input(
