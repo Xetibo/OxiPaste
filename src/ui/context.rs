@@ -135,7 +135,10 @@ impl TextContext {
             mk_content_button(
                 focused_index,
                 current_index,
-                CustomRich::custom_rich(rich_text![span(text.to_owned()).underline(false)]).into(),
+                CustomRich::<(), Message>::custom_rich(rich_text![
+                    span(text.to_owned()).underline(false)
+                ])
+                .into(),
             ),
             Some(
                 button(

@@ -8,6 +8,7 @@ use context::{
 };
 use iced::keyboard::Modifiers;
 use iced::keyboard::key::Named;
+use iced::theme::Style;
 use iced::widget::{Column, Row, column, row, scrollable};
 use iced::{Alignment, Color, Element, Length, Task, Theme, event, futures};
 use indexmap::IndexMap;
@@ -19,8 +20,6 @@ use oxiced::widgets::oxi_picklist::pick_list;
 use oxiced::widgets::oxi_svg::{self, SvgStyleVariant};
 use oxiced::widgets::oxi_text_input::text_input;
 
-use iced_layershell::Application;
-use iced_layershell::actions::LayershellCustomActions;
 use iced_layershell::reexport::{Anchor, KeyboardInteractivity, Layer};
 use iced_layershell::settings::{LayerShellSettings, Settings};
 use utils::{FocusDirection, mk_svg, svg_path};
@@ -48,7 +47,18 @@ pub fn main() -> Result<(), iced_layershell::Error> {
         },
         ..Default::default()
     };
-    OxiPaste::run(settings)
+    iced_layershell::application(
+        OxiPaste::new,
+        OxiPaste::namespace,
+        OxiPaste::update,
+        OxiPaste::view,
+    )
+    .settings(settings)
+    .scale_factor(OxiPaste::scale_factor)
+    .theme(OxiPaste::theme)
+    .style(OxiPaste::style)
+    .subscription(OxiPaste::subscription)
+    .run()
 }
 
 #[derive(Debug, Clone)]
@@ -158,13 +168,16 @@ enum Message {
     RunContextCommand(ContextCommand, bool, i32),
     SubMessageContext(i32, ContextMenuMessage),
     MoveFocus(FocusDirection),
+    FocusSearch,
     Exit,
     Enter,
 }
 
-impl TryInto<LayershellCustomActions> for Message {
+impl TryInto<iced_layershell::actions::LayershellCustomActionWithId> for Message {
     type Error = Self;
-    fn try_into(self) -> Result<LayershellCustomActions, Self::Error> {
+    fn try_into(
+        self,
+    ) -> Result<iced_layershell::actions::LayershellCustomActionWithId, Self::Error> {
         Err(self)
     }
 }
@@ -215,13 +228,8 @@ impl OxiPaste {
     }
 }
 
-impl Application for OxiPaste {
-    type Message = Message;
-    type Flags = ();
-    type Theme = Theme;
-    type Executor = iced::executor::Default;
-
-    fn new(_flags: ()) -> (Self, Task<Message>) {
+impl OxiPaste {
+    fn new() -> (Self, Task<Message>) {
         (
             Self {
                 ..Default::default()
@@ -230,11 +238,11 @@ impl Application for OxiPaste {
         )
     }
 
-    fn namespace(&self) -> String {
+    fn namespace() -> String {
         String::from("OxiPaste")
     }
 
-    fn subscription(&self) -> iced::Subscription<Self::Message> {
+    fn subscription(&self) -> iced::Subscription<Message> {
         event::listen_with(|event, _status, _id| match event {
             iced::Event::Keyboard(iced::keyboard::Event::KeyPressed {
                 modifiers: modifier,
@@ -252,7 +260,7 @@ impl Application for OxiPaste {
                 },
                 _ => None,
             },
-            _ => None,
+            _ => Some(Message::FocusSearch),
         })
     }
 
@@ -326,6 +334,7 @@ impl Application for OxiPaste {
                 Task::none()
             }
             Message::Enter => Task::done(Message::CopyFromKeyboard(self.focus as i32)),
+            Message::FocusSearch => iced::widget::text_input::focus("search_box"),
         }
     }
 
@@ -338,7 +347,7 @@ impl Application for OxiPaste {
     }
 
     // remove the annoying background color
-    fn style(&self, _: &Self::Theme) -> iced_layershell::Appearance {
+    fn style(&self, _: &Theme) -> Style {
         layer_theme()
     }
 
@@ -429,7 +438,7 @@ fn window(state: &OxiPaste) -> Column<Message> {
 
     let mut elements_col = column![];
     for element in elements {
-        elements_col = elements_col.push_maybe(Some(element));
+        elements_col = elements_col.push(Some(element));
     }
     let elements_scrollable = scrollable(elements_col);
 

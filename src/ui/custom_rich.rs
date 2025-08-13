@@ -4,51 +4,37 @@ use iced::advanced::widget::{self, Widget};
 use iced::widget::text::{Catalog, Rich};
 use iced::{Length, Rectangle, Size};
 
-pub struct CustomRich<'a, Link, Theme = iced::Theme, Renderer = iced::Renderer>
+pub struct CustomRich<'a, Link, Message, Theme = iced::Theme, Renderer = iced::Renderer>
 where
     Link: Clone + 'static,
     Theme: Catalog,
     Renderer: iced::advanced::text::Renderer,
 {
-    inner: Rich<'a, Link, Theme, Renderer>,
+    inner: Rich<'a, Link, Message, Theme, Renderer>,
 }
 
 #[allow(clippy::self_named_constructors)]
-impl<'a, Link, Theme, Renderer> CustomRich<'a, Link, Theme, Renderer>
+impl<'a, Link, Message, Theme, Renderer> CustomRich<'a, Link, Message, Theme, Renderer>
 where
     Link: Clone + 'static,
     Theme: Catalog,
     Renderer: iced::advanced::text::Renderer,
 {
-    pub fn new(inner: Rich<'a, Link, Theme, Renderer>) -> Self {
+    pub fn new(inner: Rich<'a, Link, Message, Theme, Renderer>) -> Self {
         Self { inner }
     }
-    pub fn custom_rich(inner: Rich<'a, Link, Theme, Renderer>) -> Self {
+    pub fn custom_rich(inner: Rich<'a, Link, Message, Theme, Renderer>) -> Self {
         Self::new(inner)
     }
 }
 
 impl<'a, Link, Message, Theme, Renderer> Widget<Message, Theme, Renderer>
-    for CustomRich<'a, Link, Theme, Renderer>
+    for CustomRich<'a, Link, Message, Theme, Renderer>
 where
     Link: Clone + 'static,
     Theme: Catalog,
     Renderer: iced::advanced::text::Renderer,
 {
-    fn on_event(
-        &mut self,
-        _state: &mut widget::Tree,
-        _event: iced::Event,
-        _layout: Layout<'_>,
-        _cursor: iced::advanced::mouse::Cursor,
-        _renderer: &Renderer,
-        _clipboard: &mut dyn iced::advanced::Clipboard,
-        _shell: &mut iced::advanced::Shell<'_, Message>,
-        _viewport: &Rectangle,
-    ) -> iced::advanced::graphics::core::event::Status {
-        iced::advanced::graphics::core::event::Status::Ignored
-    }
-
     fn size_hint(&self) -> Size<Length> {
         self.inner.size_hint()
     }
@@ -112,16 +98,34 @@ where
         self.inner
             .draw(tree, renderer, theme, style, layout, cursor, viewport)
     }
+
+    fn diff(&self, tree: &mut widget::Tree) {
+        tree.children.clear();
+    }
+
+    fn update(
+        &mut self,
+        _state: &mut widget::Tree,
+        _event: &iced::Event,
+        _layout: Layout<'_>,
+        _cursor: iced::advanced::mouse::Cursor,
+        _renderer: &Renderer,
+        _clipboard: &mut dyn iced::advanced::Clipboard,
+        _shell: &mut iced::advanced::Shell<'_, Message>,
+        _viewport: &Rectangle,
+    ) {
+    }
 }
 
-impl<'a, Message, Theme, Renderer> From<CustomRich<'a, Message, Theme, Renderer>>
+impl<'a, Link, Message, Theme, Renderer> From<CustomRich<'a, Link, Message, Theme, Renderer>>
     for iced::Element<'a, Message, Theme, Renderer>
 where
+    Link: Clone + 'static,
     Theme: Catalog + 'a,
     Renderer: iced::advanced::text::Renderer + 'a,
-    Message: Clone,
+    Message: Clone + 'a,
 {
-    fn from(rich: CustomRich<'a, Message, Theme, Renderer>) -> Self {
+    fn from(rich: CustomRich<'a, Link, Message, Theme, Renderer>) -> Self {
         Self::new(rich)
     }
 }
