@@ -39,7 +39,7 @@ pub fn main() -> Result<(), iced_layershell::Error> {
         layer_settings: LayerShellSettings {
             size: Some(WINDOW_SIZE),
             exclusive_zone: 0,
-            anchor: Anchor::Left | Anchor::Right | Anchor::Top | Anchor::Bottom,
+            anchor: Anchor::empty(),
             layer: Layer::Overlay,
             margin: WINDOW_MARGIN,
             keyboard_interactivity: KeyboardInteractivity::Exclusive,
